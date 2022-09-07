@@ -2,72 +2,149 @@ package converter.actions;
 
 import converter.actions.actions.*;
 import converter.mapper.Mapper;
+import minecraft.Block;
 import minecraft.Blocks;
 import minecraft.Material;
 import minecraft.Property;
-import vmfWriter.entity.pointEntity.pointEntity.InfoPlayerCT;
 import vmfWriter.entity.pointEntity.pointEntity.InfoPlayerT;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 public class CustomActionManager extends ActionManager {
+  public static final class Materials {
+    public static final Material[] IGNORED = new Material[]{
+      // Material.ladder,
+
+      // Air
+      Material.air,
+      Material.cave_air,
+      Material.void_air,
+
+      // Interactive
+      Material.cobweb,
+      Material.fire,
+      Material.iron_door,
+      Material.oak_door,
+      Material.oak_pressure_plate,
+      Material.redstone_dust,
+      Material.stone_button,
+      Material.stone_pressure_plate,
+
+      // Others
+      Material.detector_rail,
+      Material.detector_rail,
+      Material.rail,
+      Material.redstone_torch,
+      Material.redstone_wall_torch,
+
+      // Plants
+      Material.allium,
+      Material.azure_bluet,
+      Material.blue_orchid,
+      Material.brown_mushroom,
+      Material.cornflower,
+      Material.dandelion,
+      Material.fern,
+      Material.grass,
+      Material.large_fern,
+      Material.lever,
+      Material.lilac,
+      Material.lily_of_the_valley,
+      Material.oak_wall_sign,
+      Material.orange_tulip,
+      Material.oxeye_daisy,
+      Material.peony,
+      Material.pink_tulip,
+      Material.poppy,
+      Material.red_mushroom,
+      Material.red_tulip,
+      Material.rose_bush,
+      Material.seagrass,
+      Material.sugar_cane,
+      Material.sugar_cane,
+      Material.sunflower,
+      Material.sweet_berry_bush,
+      Material.tall_grass,
+      Material.tall_grass,
+      Material.tall_seagrass,
+      Material.wheat,
+      Material.white_tulip,
+      Material.wither_rose,
+    };
+
+    public static final Material[] DETAIL = new Material[]{
+      Material._leaves,
+      Material.glass,
+      Material.ice
+    };
+
+    public static final Material[] LIQUID = new Material[]{
+      Material.kelp,
+      Material.kelp_plant,
+      Material.lava,
+      Material.seagrass,
+      Material.tall_seagrass,
+      Material.water,
+    };
+  }
 
   public CustomActionManager(Mapper map, Collection<ConvertEntity> converters) {
     super(Solid.INSTANCE);
   }
 
   public CustomActionManager setDefaults() {
-    this.actions.put(Blocks._UNSET, NoAction.INSTANCE);
-    this.actions.put(Material.air, NoAction.INSTANCE);
-    this.actions.put(Material.cave_air, NoAction.INSTANCE);
-    this.actions.put(Material.void_air, NoAction.INSTANCE);
+    mapToAction(NoAction.INSTANCE, Blocks._UNSET);
+    mapToAction(NoAction.INSTANCE, Materials.IGNORED);
+    mapToAction(new DetailBlock(), Materials.DETAIL);
+    mapToAction(new Liquid(), Materials.LIQUID);
 
-    for (Material m : new Material[]{Material.fern, Material.grass, Material.dandelion, Material.poppy,
-      Material.brown_mushroom, Material.red_mushroom, Material.redstone_dust, Material.wheat,
-      Material.oak_door, Material.ladder, Material.rail, Material.oak_wall_sign, Material.lever,
-      Material.stone_pressure_plate, Material.iron_door, Material.oak_pressure_plate, Material.sugar_cane,
-      Material.sunflower, Material.cobweb, Material.detector_rail, Material.detector_rail, Material.fire,
-      Material.redstone_wall_torch, Material.redstone_torch, Material.stone_button, Material.tall_grass,
-      Material.tall_grass, Material.large_fern, Material.blue_orchid, Material.allium, Material.azure_bluet,
-      Material.red_tulip, Material.orange_tulip, Material.white_tulip, Material.pink_tulip,
-      Material.oxeye_daisy, Material.cornflower, Material.lily_of_the_valley, Material.wither_rose,
-      Material.lilac, Material.rose_bush, Material.peony, Material.sugar_cane, Material.seagrass,
-      Material.tall_seagrass, Material.sweet_berry_bush}) {
-      this.actions.put(m, NoAction.INSTANCE);
-    }
-    for (Material m : new Material[]{Material._leaves, Material.glass, Material.ice}) {
-      this.actions.put(m, new DetailBlock());
-    }
-    for (Material m : new Material[]{Material.water, Material.lava, Material.seagrass, Material.tall_seagrass,
-      Material.kelp, Material.kelp_plant}) {
-      this.actions.put(m, new Liquid());
-    }
-    this.actions.put(Material._fence, new Fence());
-    this.actions.put(Material._stairs, new Stairs());
-    this.actions.put(Blocks.get(t -> t.setName(Material._slab)
+    mapToAction(new Fire(), Material.fire);
+    mapToAction(new Cactus(), Material.cactus);
+    mapToAction(Torch.INSTANCE, Material.torch, Material.wall_torch);
+
+    mapToAction(new Fence(), Material._fence);
+    mapToAction(new Stairs(), Material._stairs);
+
+    mapToAction(new SlabTop(), Blocks.get(blockTemplate -> blockTemplate
+      .setName(Material._slab)
       .addProperty(Property.half, Property.Half.top)
-      .addProperty(Property.waterlogged, Property.Waterlogged.false$)), new SlabTop());
-    this.actions.put(Blocks.get(t -> t.setName(Material._slab)
+      .addProperty(Property.waterlogged, Property.Waterlogged.false$)
+    ));
+
+    mapToAction(new SlabBottom(), Blocks.get(blockTemplate -> blockTemplate
+      .setName(Material._slab)
       .addProperty(Property.half, Property.Half.bottom)
-      .addProperty(Property.waterlogged, Property.Waterlogged.false$)), new SlabBottom());
-    this.actions.put(Material.torch, Torch.INSTANCE);
-    this.actions.put(Material.wall_torch, Torch.INSTANCE);
-    this.actions.put(Material.cactus, new Cactus());
-    this.actions.put(Material.fire, new Fire());
+      .addProperty(Property.waterlogged, Property.Waterlogged.false$)
+    ));
 
-    // tf2
-    this.actions.put(Material.grass, new TallGrassTf2());
+    setTf2Defaults();
+    setTttDefaults();
+    setCssDefaults();
 
-    // ttt
-    this.actions.put(Material.zombie_head, new CenteredPointEntity("info_player_start"));
-    this.actions.put(Material.fletching_table, new CenteredPointEntity("ttt_random_weapon"));
-    this.actions.put(Material.grindstone, new CenteredPointEntity("ttt_random_ammo"));
-
-    // css
-//		this.actions.put(Material.torch, new CssLamp());
-//		this.actions.put(Material.wall_torch, new CssLamp());
-    this.actions.put(Material.end_portal_frame, new PlayerSpawnCss(new InfoPlayerT().setRotation(0), false));
-    this.actions.put(Material.ender_chest, new PlayerSpawnCss(new InfoPlayerCT().setRotation(180), true));
     return this;
+  }
+
+  private void mapToAction(Action action, Supplier<Block>... blockSuppliers) {
+    for (Supplier<Block> blockSupplier : blockSuppliers) {
+      this.actions.put(blockSupplier, action);
+    }
+  }
+
+  private void setTf2Defaults() {
+    mapToAction(new TallGrassTf2(), Material.grass);
+  }
+
+  private void setTttDefaults() {
+    mapToAction(new CenteredPointEntity("info_player_start"), Material.zombie_head, Material.zombie_wall_head);
+    mapToAction(new CenteredPointEntity("ttt_random_weapon"), Material.skeleton_skull, Material.skeleton_wall_skull);
+    mapToAction(new CenteredPointEntity("ttt_random_ammo"), Material.wither_skeleton_skull, Material.wither_skeleton_wall_skull);
+  }
+
+  private void setCssDefaults() {
+    // this.actions.put(Material.torch, new CssLamp());
+    // this.actions.put(Material.wall_torch, new CssLamp());
+    mapToAction(new PlayerSpawnCss(new InfoPlayerT().setRotation(180), false), Material.ender_chest);
+    mapToAction(new PlayerSpawnCss(new InfoPlayerT().setRotation(0), false), Material.end_portal_frame);
   }
 }

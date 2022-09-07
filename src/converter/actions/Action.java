@@ -31,8 +31,7 @@ public abstract class Action {
   }
 
   public String getName() {
-    return this.getClass()
-      .getSimpleName();
+    return this.getClass().getSimpleName();
   }
 
   /**
